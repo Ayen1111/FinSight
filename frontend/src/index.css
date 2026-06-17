@@ -33,7 +33,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   background-color: var(--color-background);
   color: var(--color-text);
   min-height: 100vh;
@@ -122,6 +122,25 @@ body {
 @keyframes fsNumberShine {
   0%   { background-position: -150% center; }
   100% { background-position: 250% center; }
+}
+
+/* ── Cinematic App Reveal ── */
+.fs-app-reveal { animation: fsAppReveal 1.2s cubic-bezier(0.16,1,0.3,1) forwards; }
+@keyframes fsAppReveal {
+  0%   { opacity: 0; filter: blur(12px); transform: scale(1.03); }
+  100% { opacity: 1; filter: blur(0); transform: scale(1); }
+}
+
+/* ── Loading Screen Logo Float ── */
+@keyframes fsLogoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* ── Loading Bar ── */
+@keyframes fsLoadingBar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
 }
 
 

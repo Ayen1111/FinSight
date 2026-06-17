@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UploadSection from './components/UploadSection';
 import Dashboard from './components/Dashboard';
+import LoadingScreen from './components/LoadingScreen';
 
 function App() {
   const [uploaded, setUploaded] = useState(false);
   const [initialData, setInitialData] = useState(null);
+  const [isAppLoading, setIsAppLoading] = useState(true);
 
   const handleUploadSuccess = (data) => {
     setInitialData(data);
@@ -17,10 +19,13 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Header — only shown on dashboard */}
-      {uploaded && (
-        <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-xl sticky top-0 z-50">
+    <>
+      {isAppLoading && <LoadingScreen onComplete={() => setIsAppLoading(false)} />}
+      
+      <div className={`min-h-screen ${!isAppLoading ? 'fs-app-reveal' : 'hidden'}`}>
+        {/* Header — only shown on dashboard */}
+        {!isAppLoading && uploaded && (
+          <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-xl sticky top-0 z-50">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] flex items-center justify-center text-lg">
@@ -42,14 +47,15 @@ function App() {
       )}
 
       {/* Main Content */}
-      {!uploaded ? (
+      {!isAppLoading && !uploaded ? (
         <UploadSection onSuccess={handleUploadSuccess} />
-      ) : (
+      ) : !isAppLoading ? (
         <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <Dashboard initialData={initialData} />
         </main>
-      )}
-    </div>
+      ) : null}
+      </div>
+    </>
   );
 }
 
