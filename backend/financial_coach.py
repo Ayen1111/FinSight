@@ -95,9 +95,9 @@ RULES:
 5. If the user asks something completely unrelated to finance, politely steer them back to their finances.
 """
 
-        # Using gemini-1.5-flash as requested for speed and cost-effectiveness
+        # Using gemini-2.5-flash for speed and cost-effectiveness
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.5-flash",
             system_instruction=system_instruction,
             generation_config={"temperature": 0.5}
         )
