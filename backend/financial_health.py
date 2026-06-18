@@ -92,14 +92,17 @@ def calculate_financial_health(df, overview, subscriptions, anomalies, monthly_d
         recommendations.append("Your spending has many erratic spikes. Try to stick to a more predictable budget.")
 
     # 5. Expense Stability Score (10%) & Cash Flow Score (10%)
-    if monthly_data and len(monthly_data) > 1:
-        expenses_per_month = [m['expenses'] for m in monthly_data]
-        income_per_month = [m['income'] for m in monthly_data]
+    if df is not None and not df.empty:
+        import pandas as pd
+        df_copy = df.copy()
+        df_copy['YearMonth'] = df_copy['Date'].dt.to_period('M')
+        monthly_exp = df_copy[df_copy['Type'] == 'Expense'].groupby('YearMonth')['Amount'].sum().values
+        monthly_inc = df_copy[df_copy['Type'] == 'Income'].groupby('YearMonth')['Amount'].sum().values
         
         # Stability: Coefficient of Variation of expenses
-        exp_mean = np.mean(expenses_per_month)
+        exp_mean = np.mean(monthly_exp) if len(monthly_exp) > 0 else 0
         if exp_mean > 0:
-            exp_cv = np.std(expenses_per_month) / exp_mean
+            exp_cv = np.std(monthly_exp) / exp_mean
         else:
             exp_cv = 0
 
@@ -115,9 +118,9 @@ def calculate_financial_health(df, overview, subscriptions, anomalies, monthly_d
             recommendations.append("Try to smooth out your monthly expenses for better predictability.")
 
         # Cash Flow: Income vs Expense consistency
-        inc_mean = np.mean(income_per_month)
+        inc_mean = np.mean(monthly_inc) if len(monthly_inc) > 0 else 0
         if inc_mean > 0:
-            inc_cv = np.std(income_per_month) / inc_mean
+            inc_cv = np.std(monthly_inc) / inc_mean
         else:
             inc_cv = 0
             
