@@ -836,17 +836,19 @@ function CoachSection() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto h-[600px] flex flex-col">
-      {/* Header */}
-      <div className="glass-card p-6 border-l-4 border-l-[var(--color-primary)] flex items-center gap-4 shrink-0">
-        <div className="w-12 h-12 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center">
-          <Bot className="w-6 h-6 text-[var(--color-primary-light)]" />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
+      {/* Left Chat Column */}
+      <div className="lg:col-span-2 flex flex-col space-y-6 overflow-hidden h-full">
+        {/* Header */}
+        <div className="glass-card p-6 border-l-4 border-l-[var(--color-primary)] flex items-center gap-4 shrink-0">
+          <div className="w-12 h-12 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center">
+            <Bot className="w-6 h-6 text-[var(--color-primary-light)]" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">FinSight AI Coach</h2>
+            <p className="text-sm text-[var(--color-text-muted)]">Your personalized financial mentor</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold">FinSight AI Coach</h2>
-          <p className="text-sm text-[var(--color-text-muted)]">Your personalized financial mentor powered by Gemini AI</p>
-        </div>
-      </div>
 
       {/* Suggested Questions */}
       {messages.length === 1 && !error && (
@@ -939,6 +941,65 @@ function CoachSection() {
               <Send className="w-5 h-5" />
             </button>
           </form>
+        </div>
+      </div>
+      </div>
+
+      {/* Right Context Panel */}
+      <div className="hidden lg:flex flex-col space-y-6 h-full">
+        <div className="glass-card p-6 flex-1 flex flex-col">
+          <h3 className="font-bold text-lg mb-6 flex items-center gap-2 text-[var(--color-primary-light)]">
+            <Sparkles className="w-5 h-5" />
+            What the AI Knows
+          </h3>
+          
+          <div className="space-y-6 overflow-y-auto flex-1 pr-2">
+            <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <Target className="w-4 h-4 text-green-400" />
+                Financial Health
+              </h4>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                The AI has full access to your Health Score, including your positive financial habits and areas that need immediate improvement.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-400" />
+                Spending Patterns
+              </h4>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                It understands your entire transaction history, your top spending categories, and your overall savings rate.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-purple-400" />
+                Subscriptions
+              </h4>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                It can identify all your recurring charges and calculate exactly how much money you could save by cancelling unused ones.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-orange-400" />
+                Anomalies
+              </h4>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                The AI is aware of any unusual spending spikes or anomalous transactions that deviate from your normal behavior.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <p className="text-xs text-center text-gray-500">
+              Your financial data is processed securely and only used to generate personalized advice.
+            </p>
+          </div>
         </div>
       </div>
     </div>
