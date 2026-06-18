@@ -14,6 +14,7 @@ from subscription_detector import find_subscriptions
 from savings_planner import create_savings_plan
 from ai_advisor import get_advice
 from financial_health import calculate_financial_health
+from financial_personality import detect_financial_personality
 
 app = Flask(__name__)
 CORS(app)
@@ -47,6 +48,9 @@ def process_data(df):
     store['forecast'] = forecast_next_month(df)
     store['subscriptions'] = find_subscriptions(df)
     store['health_score'] = calculate_financial_health(
+        store['df'], store['overview'], store['subscriptions'], store['anomalies'], store['monthly']
+    )
+    store['personality'] = detect_financial_personality(
         store['df'], store['overview'], store['subscriptions'], store['anomalies'], store['monthly']
     )
 
@@ -158,11 +162,24 @@ def api_subscriptions():
 
 
 @app.route('/api/financial-health-score', methods=['GET'])
-def api_financial_health_score():
-    """Get the calculated financial health score."""
+def get_financial_health_score():
+    if store['df'] is None:
+        return jsonify({'error': 'No data uploaded'}), 400
+    
     if store['health_score'] is None:
-        return jsonify({'error': 'No data loaded. Please upload a file first.'}), 400
+        return jsonify({'error': 'Financial health score could not be calculated'}), 400
+        
     return jsonify(store['health_score'])
+
+@app.route('/api/personality', methods=['GET'])
+def get_personality():
+    if store['df'] is None:
+        return jsonify({'error': 'No data uploaded'}), 400
+    
+    if store.get('personality') is None:
+        return jsonify({'error': 'Personality could not be calculated'}), 400
+        
+    return jsonify(store['personality'])
 
 
 @app.route('/api/advice', methods=['POST'])

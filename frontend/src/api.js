@@ -15,6 +15,7 @@ export const getAnomalies = () => api.get('/anomalies');
 export const getForecast = () => api.get('/forecast');
 export const getSubscriptions = () => api.get('/subscriptions');
 export const getFinancialHealthScore = () => api.get('/financial-health-score');
+export const getPersonality = () => api.get('/personality');
 export const getAdvice = () => api.post('/advice');
 export const getSavingsGoal = (target, months) =>
   api.post('/savings-goal', { target, months });

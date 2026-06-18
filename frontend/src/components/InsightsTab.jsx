@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import {
   getAnomalies, getAdvice, getForecast,
-  getSubscriptions, getSavingsGoal
+  getSubscriptions, getSavingsGoal, getPersonality
 } from '../api';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import {
   AlertTriangle, Lightbulb, TrendingUp, CreditCard,
   Target, ChevronDown, ChevronUp, Zap, Ghost,
-  ArrowRight
+  ArrowRight, Sparkles, CheckCircle2, XCircle, AlertCircle
 } from 'lucide-react';
 
 export default function InsightsTab() {
@@ -23,6 +23,7 @@ export default function InsightsTab() {
           { id: 'forecast', label: 'Forecast', icon: TrendingUp },
           { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
           { id: 'savings', label: 'Savings Goal', icon: Target },
+          { id: 'personality', label: 'Financial Personality', icon: Sparkles },
         ].map((s) => {
           const Icon = s.icon;
           return (
@@ -45,6 +46,7 @@ export default function InsightsTab() {
         {section === 'forecast' && <ForecastSection />}
         {section === 'subscriptions' && <SubscriptionsSection />}
         {section === 'savings' && <SavingsSection />}
+        {section === 'personality' && <PersonalitySection />}
       </div>
     </div>
   );
@@ -625,6 +627,160 @@ function MiniStat({ label, value }) {
     <div className="glass-card p-3 text-center">
       <p className="text-xs text-[var(--color-text-dim)] mb-1">{label}</p>
       <p className="text-lg font-bold">{value}</p>
+    </div>
+  );
+}
+
+/* ── FINANCIAL PERSONALITY ── */
+function PersonalitySection() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getPersonality()
+      .then((res) => setData(res.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <Spinner />;
+  if (!data) return <EmptyState icon={Sparkles} message="Financial Personality not available" />;
+
+  return (
+    <div className="space-y-6">
+      {/* Premium Header Card (Spotify Wrapped Style) */}
+      <div 
+        className="glass-card p-8 text-center relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${data.color}20 0%, transparent 100%)`,
+          borderColor: `${data.color}40`
+        }}
+      >
+        <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: data.color }} />
+        
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/10 mb-4 shadow-xl border border-white/10 backdrop-blur-md">
+          <span className="text-4xl">{data.icon}</span>
+        </div>
+        
+        <h3 className="text-sm font-bold uppercase tracking-widest mb-2" style={{ color: data.color }}>
+          Your Financial Identity
+        </h3>
+        
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-2 tracking-tight">
+          {data.personality}
+        </h2>
+        
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <Sparkles className="w-4 h-4" style={{ color: data.color }} />
+          <p className="text-sm font-medium text-[var(--color-text-muted)]">
+            AI Confidence: <strong className="text-white">{data.confidence}%</strong>
+          </p>
+        </div>
+        
+        <p className="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto leading-relaxed">
+          "{data.description}"
+        </p>
+      </div>
+
+      {/* Analysis Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        {/* Strengths */}
+        <div className="glass-card p-6 border-t-2 border-t-[var(--color-success)]">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-4 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[var(--color-success)]" />
+            Your Strengths
+          </h4>
+          <ul className="space-y-3">
+            {data.strengths.map((item, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm slide-up" style={{ animationDelay: `${i * 50}ms` }}>
+                <span className="text-[var(--color-success)] mt-0.5">✓</span>
+                <span className="text-gray-300">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Weaknesses */}
+        <div className="glass-card p-6 border-t-2 border-t-[var(--color-warning)]">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-[var(--color-warning)]" />
+            Areas to Watch
+          </h4>
+          <ul className="space-y-3">
+            {data.weaknesses.map((item, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm slide-up" style={{ animationDelay: `${(i+4) * 50}ms` }}>
+                <span className="text-[var(--color-warning)] mt-0.5">⚠</span>
+                <span className="text-gray-300">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Risks */}
+        <div className="glass-card p-6 border-t-2 border-t-[var(--color-danger)]">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-4 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-[var(--color-danger)]" />
+            Financial Risks
+          </h4>
+          <ul className="space-y-3">
+            {data.risks.map((item, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm slide-up" style={{ animationDelay: `${(i+8) * 50}ms` }}>
+                <XCircle className="w-4 h-4 text-[var(--color-danger)] shrink-0 mt-0.5" />
+                <span className="text-gray-300">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Recommendations */}
+        <div className="glass-card p-6 border-t-2 border-t-[var(--color-primary)]">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-4 flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-[var(--color-primary-light)]" />
+            Action Plan
+          </h4>
+          <ul className="space-y-3">
+            {data.recommendations.map((item, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm slide-up" style={{ animationDelay: `${(i+12) * 50}ms` }}>
+                <ArrowRight className="w-4 h-4 text-[var(--color-primary-light)] shrink-0 mt-0.5" />
+                <span className="text-gray-300">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+      </div>
+
+      {/* Secondary Traits */}
+      {data.traits && data.traits.length > 1 && (
+        <div className="glass-card p-6">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-6 text-center">
+            Secondary Personality Breakdown
+          </h4>
+          <div className="space-y-4 max-w-2xl mx-auto">
+            {data.traits.map((trait, i) => (
+              <div key={i} className="slide-up" style={{ animationDelay: `${(i+16) * 50}ms` }}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className={i === 0 ? "font-bold text-white" : "text-[var(--color-text-muted)]"}>
+                    {trait.name} {i === 0 && "(Primary)"}
+                  </span>
+                  <span className="font-semibold">{trait.percentage}%</span>
+                </div>
+                <div className="w-full bg-[var(--color-surface-alt)] rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="h-2 rounded-full transition-all duration-1000 ease-out"
+                    style={{ 
+                      width: `${trait.percentage}%`,
+                      backgroundColor: i === 0 ? data.color : 'var(--color-border)',
+                      opacity: i === 0 ? 1 : 0.6
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
