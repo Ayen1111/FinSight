@@ -20,7 +20,7 @@ export default function InsightsTab() {
       <div className="flex gap-2 flex-wrap">
         {[
           { id: 'coach', label: 'AI Financial Coach', icon: Bot },
-          { id: 'personality', label: 'Financial Personality', icon: Sparkles },
+          { id: 'anomalies', label: 'Anomalies', icon: AlertTriangle },
           { id: 'advice', label: 'AI Advice', icon: Lightbulb },
           { id: 'forecast', label: 'Forecast', icon: TrendingUp },
           { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
@@ -44,7 +44,6 @@ export default function InsightsTab() {
       {/* Section Content */}
       <div className="slide-up" key={section}>
         {section === 'coach' && <CoachSection />}
-        {section === 'personality' && <PersonalitySection />}
         {section === 'anomalies' && <AnomaliesSection />}
         {section === 'advice' && <AdviceSection />}
         {section === 'forecast' && <ForecastSection />}
