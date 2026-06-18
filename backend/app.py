@@ -270,9 +270,9 @@ def api_financial_coach():
     result = ask_financial_coach(question, store, history)
     
     if "error" in result:
-        # We can return 400 for missing API key so frontend can handle it
-        status_code = 400 if result['error'] == "missing_api_key" else 500
-        return jsonify(result), status_code
+        # We can return 400 for missing API key so frontend can handle it specifically
+        # For other api_error, we still return 400 so the frontend can display the message!
+        return jsonify(result), 400
         
     return jsonify(result)
 

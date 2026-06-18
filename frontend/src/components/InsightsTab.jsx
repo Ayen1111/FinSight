@@ -825,7 +825,7 @@ function CoachSection() {
       const aiMsg = { id: (Date.now() + 1).toString(), sender: 'model', text: response.data.answer };
       setMessages(prev => [...prev, aiMsg]);
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.error === 'missing_api_key') {
+      if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);
       } else {
         setError("Failed to connect to the AI Coach. Please try again later.");
@@ -871,10 +871,12 @@ function CoachSection() {
             <div>
               <h3 className="font-bold text-[var(--color-danger)] mb-1">Configuration Required</h3>
               <p className="text-sm text-gray-300 mb-4">{error}</p>
-              <div className="bg-black/50 p-3 rounded text-xs font-mono text-gray-300">
-                # Create a file named .env in the backend folder<br/>
-                GEMINI_API_KEY="your-api-key-here"
-              </div>
+              {error && error.includes('GEMINI_API_KEY') && (
+                <div className="bg-black/50 p-3 rounded text-xs font-mono text-gray-300">
+                  # Create a file named .env in the backend folder<br/>
+                  GEMINI_API_KEY="your-api-key-here"
+                </div>
+              )}
             </div>
           </div>
         </div>

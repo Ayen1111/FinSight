@@ -7,9 +7,6 @@ from dotenv import load_dotenv
 # Load environment variables from .env if present
 load_dotenv()
 
-# Initialize Gemini
-API_KEY = os.environ.get("GEMINI_API_KEY")
-
 def format_financial_summary(store_data):
     """
     Extracts key information from the user's data store and formats it
@@ -70,14 +67,16 @@ def ask_financial_coach(question, store_data, history=None):
     Sends the user's question and financial summary to the Gemini API.
     Returns the generated response.
     """
-    if not API_KEY:
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip('"').strip("'").strip()
+    
+    if not api_key:
         return {
             "error": "missing_api_key",
-            "message": "Please configure your GEMINI_API_KEY in the .env file to use the AI Financial Coach."
+            "message": "Please configure your GEMINI_API_KEY in the Render dashboard or .env file to use the AI Financial Coach."
         }
 
     try:
-        genai.configure(api_key=API_KEY)
+        genai.configure(api_key=api_key)
         
         # System instructions setup
         financial_context = format_financial_summary(store_data)
