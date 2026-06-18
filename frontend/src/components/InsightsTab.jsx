@@ -647,7 +647,7 @@ function PersonalitySection() {
   if (!data) return <EmptyState icon={Sparkles} message="Financial Personality not available" />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Premium Header Card (Spotify Wrapped Style) */}
       <div 
         className="glass-card p-8 text-center relative overflow-hidden"
@@ -662,11 +662,11 @@ function PersonalitySection() {
           <span className="text-4xl">{data.icon}</span>
         </div>
         
-        <h3 className="text-sm font-bold uppercase tracking-widest mb-2" style={{ color: data.color }}>
+        <h3 className="text-sm font-semibold uppercase tracking-widest mb-3 opacity-90" style={{ color: data.color }}>
           Your Financial Identity
         </h3>
         
-        <h2 className="text-4xl sm:text-5xl font-black text-white mb-2 tracking-tight">
+        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3 tracking-tight">
           {data.personality}
         </h2>
         
@@ -683,7 +683,7 @@ function PersonalitySection() {
       </div>
 
       {/* Analysis Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
         
         {/* Strengths */}
         <div className="glass-card p-6 border-t-2 border-t-[var(--color-success)]">
@@ -753,11 +753,11 @@ function PersonalitySection() {
 
       {/* Secondary Traits */}
       {data.traits && data.traits.length > 1 && (
-        <div className="glass-card p-6">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-6 text-center">
+        <div className="glass-card p-8 mt-4">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-8 text-center">
             Secondary Personality Breakdown
           </h4>
-          <div className="space-y-4 max-w-2xl mx-auto">
+          <div className="space-y-6 max-w-2xl mx-auto">
             {data.traits.map((trait, i) => (
               <div key={i} className="slide-up" style={{ animationDelay: `${(i+16) * 50}ms` }}>
                 <div className="flex justify-between text-sm mb-1">
