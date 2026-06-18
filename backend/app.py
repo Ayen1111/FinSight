@@ -13,6 +13,7 @@ from ml_models import cluster_spending, detect_anomalies, forecast_next_month
 from subscription_detector import find_subscriptions
 from savings_planner import create_savings_plan
 from ai_advisor import get_advice
+from financial_health import calculate_financial_health
 
 app = Flask(__name__)
 CORS(app)
@@ -26,6 +27,7 @@ store = {
     'anomalies': None,
     'forecast': None,
     'subscriptions': None,
+    'health_score': None,
 }
 
 SAMPLE_DATA_PATH = os.path.join(
@@ -44,6 +46,9 @@ def process_data(df):
     store['anomalies'] = detect_anomalies(df)
     store['forecast'] = forecast_next_month(df)
     store['subscriptions'] = find_subscriptions(df)
+    store['health_score'] = calculate_financial_health(
+        store['df'], store['overview'], store['subscriptions'], store['anomalies'], store['monthly']
+    )
 
 
 @app.route('/api/upload', methods=['POST'])
@@ -150,6 +155,14 @@ def api_subscriptions():
     if store['subscriptions'] is None:
         return jsonify({'error': 'No data loaded. Please upload a file first.'}), 400
     return jsonify(store['subscriptions'])
+
+
+@app.route('/api/financial-health-score', methods=['GET'])
+def api_financial_health_score():
+    """Get the calculated financial health score."""
+    if store['health_score'] is None:
+        return jsonify({'error': 'No data loaded. Please upload a file first.'}), 400
+    return jsonify(store['health_score'])
 
 
 @app.route('/api/advice', methods=['POST'])

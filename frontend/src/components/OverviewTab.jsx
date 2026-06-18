@@ -6,6 +6,7 @@ import {
 import { getOverview, getRecentTransactions } from '../api';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import FinancialHealthScore from './FinancialHealthScore';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
 
@@ -67,6 +68,7 @@ export default function OverviewTab({ initialData }) {
 
   return (
     <div style={{ paddingTop: '16px' }}>
+      <FinancialHealthScore />
       <div className="space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
