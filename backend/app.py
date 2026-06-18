@@ -254,6 +254,29 @@ def api_recent_transactions():
     return jsonify({'transactions': transactions})
 
 
+@app.route('/api/financial-coach', methods=['POST'])
+def api_financial_coach():
+    """Endpoint for the AI Financial Coach chat."""
+    if store['df'] is None:
+        return jsonify({'error': 'No data loaded. Please upload your transactions first.'}), 400
+        
+    data = request.get_json()
+    if not data or 'question' not in data:
+        return jsonify({'error': 'Missing question.'}), 400
+        
+    question = data['question']
+    history = data.get('history', [])
+    
+    result = ask_financial_coach(question, store, history)
+    
+    if "error" in result:
+        # We can return 400 for missing API key so frontend can handle it
+        status_code = 400 if result['error'] == "missing_api_key" else 500
+        return jsonify(result), status_code
+        
+    return jsonify(result)
+
+
 @app.route('/api/health', methods=['GET'])
 def health():
     """Health check endpoint."""
