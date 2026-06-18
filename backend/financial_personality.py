@@ -44,7 +44,7 @@ def detect_financial_personality(df, overview, subscriptions, anomalies, monthly
     # Monthly variance (consistency)
     expense_variance = 0
     if monthly_data and len(monthly_data) > 1:
-        amounts = [m['amount'] for m in monthly_data]
+        amounts = [m['total'] for m in monthly_data]
         expense_variance = np.std(amounts) / np.mean(amounts) if np.mean(amounts) > 0 else 0
 
     # Initialize Persona Scores
