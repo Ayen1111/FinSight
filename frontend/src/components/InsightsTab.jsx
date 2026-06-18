@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
   getAnomalies, getAdvice, getForecast,
-  getSubscriptions, getSavingsGoal, getPersonality
+  getSubscriptions, getSavingsGoal, getPersonality, askCoach
 } from '../api';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import {
   AlertTriangle, Lightbulb, TrendingUp, CreditCard,
   Target, ChevronDown, ChevronUp, Zap, Ghost,
-  ArrowRight, Sparkles, CheckCircle2, XCircle, AlertCircle
+  ArrowRight, Sparkles, CheckCircle2, XCircle, AlertCircle,
+  Bot, Send, User, Loader2
 } from 'lucide-react';
 
 export default function InsightsTab() {
@@ -18,7 +19,8 @@ export default function InsightsTab() {
       {/* Section Nav */}
       <div className="flex gap-2 flex-wrap">
         {[
-          { id: 'anomalies', label: 'Anomalies', icon: AlertTriangle },
+          { id: 'coach', label: 'AI Financial Coach', icon: Bot },
+          { id: 'personality', label: 'Financial Personality', icon: Sparkles },
           { id: 'advice', label: 'AI Advice', icon: Lightbulb },
           { id: 'forecast', label: 'Forecast', icon: TrendingUp },
           { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
@@ -41,6 +43,8 @@ export default function InsightsTab() {
 
       {/* Section Content */}
       <div className="slide-up" key={section}>
+        {section === 'coach' && <CoachSection />}
+        {section === 'personality' && <PersonalitySection />}
         {section === 'anomalies' && <AnomaliesSection />}
         {section === 'advice' && <AdviceSection />}
         {section === 'forecast' && <ForecastSection />}
@@ -781,6 +785,161 @@ function PersonalitySection() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── AI FINANCIAL COACH ── */
+function CoachSection() {
+  const [messages, setMessages] = useState([
+    {
+      id: 'welcome',
+      sender: 'model',
+      text: "Hi! I'm your FinSight AI Financial Coach. I've analyzed your financial health, spending habits, and subscriptions. How can I help you today?"
+    }
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const suggestedQuestions = [
+    "Why is my score low?",
+    "How can I save more money?",
+    "Where am I spending too much?",
+    "What should I improve first?"
+  ];
+
+  const handleSend = async (question) => {
+    if (!question.trim()) return;
+    
+    const userMsg = { id: Date.now().toString(), sender: 'user', text: question.trim() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Pass the previous conversation history (excluding the current msg and the initial welcome msg)
+      const history = messages.filter(m => m.id !== 'welcome');
+      const response = await askCoach(question, history);
+      
+      const aiMsg = { id: (Date.now() + 1).toString(), sender: 'model', text: response.data.answer };
+      setMessages(prev => [...prev, aiMsg]);
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.error === 'missing_api_key') {
+        setError(err.response.data.message);
+      } else {
+        setError("Failed to connect to the AI Coach. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto h-[600px] flex flex-col">
+      {/* Header */}
+      <div className="glass-card p-6 border-l-4 border-l-[var(--color-primary)] flex items-center gap-4 shrink-0">
+        <div className="w-12 h-12 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center">
+          <Bot className="w-6 h-6 text-[var(--color-primary-light)]" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold">FinSight AI Coach</h2>
+          <p className="text-sm text-[var(--color-text-muted)]">Your personalized financial mentor powered by Gemini AI</p>
+        </div>
+      </div>
+
+      {/* Suggested Questions */}
+      {messages.length === 1 && !error && (
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {suggestedQuestions.map((q, i) => (
+            <button
+              key={i}
+              onClick={() => handleSend(q)}
+              className="px-4 py-2 text-sm bg-[var(--color-surface-alt)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary-light)] rounded-full transition-colors border border-[var(--color-border)]"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* API Key Error Prompt */}
+      {error && (
+        <div className="glass-card p-6 border-l-4 border-l-[var(--color-danger)] shrink-0 bg-red-900/10">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-[var(--color-danger)] mt-0.5" />
+            <div>
+              <h3 className="font-bold text-[var(--color-danger)] mb-1">Configuration Required</h3>
+              <p className="text-sm text-gray-300 mb-4">{error}</p>
+              <div className="bg-black/50 p-3 rounded text-xs font-mono text-gray-300">
+                # Create a file named .env in the backend folder<br/>
+                GEMINI_API_KEY="your-api-key-here"
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chat Area */}
+      <div className="glass-card flex-1 flex flex-col overflow-hidden">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex gap-4 max-w-[85%] ${msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                msg.sender === 'user' ? 'bg-[var(--color-surface-alt)]' : 'bg-[var(--color-primary)]/20'
+              }`}>
+                {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4 text-[var(--color-primary-light)]" />}
+              </div>
+              <div className={`p-4 rounded-2xl ${
+                msg.sender === 'user' 
+                  ? 'bg-[var(--color-surface-alt)] text-white' 
+                  : 'bg-[var(--color-primary)]/10 text-gray-200 border border-[var(--color-primary)]/20'
+              }`}>
+                <div className="prose prose-invert max-w-none text-sm leading-relaxed whitespace-pre-wrap">
+                  {msg.text}
+                </div>
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex gap-4 max-w-[85%]">
+              <div className="w-8 h-8 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                <Bot className="w-4 h-4 text-[var(--color-primary-light)]" />
+              </div>
+              <div className="p-4 rounded-2xl bg-[var(--color-primary)]/10 text-gray-200 border border-[var(--color-primary)]/20 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-[var(--color-primary-light)]" />
+                <span className="text-sm animate-pulse">Analyzing your data...</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input Area */}
+        <div className="p-4 border-t border-[var(--color-border)] bg-black/20">
+          <form 
+            onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
+            className="flex gap-2"
+          >
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask me anything about your finances..."
+              className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-full px-6 py-3 text-sm focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+              disabled={loading || (error && error.includes('missing_api_key'))}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || loading || (error && error.includes('missing_api_key'))}
+              className="w-12 h-12 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--color-primary-light)] transition-colors shrink-0"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

@@ -15,6 +15,7 @@ from savings_planner import create_savings_plan
 from ai_advisor import get_advice
 from financial_health import calculate_financial_health
 from financial_personality import detect_financial_personality
+from financial_coach import ask_financial_coach
 
 app = Flask(__name__)
 CORS(app)
