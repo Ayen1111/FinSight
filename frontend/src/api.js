@@ -27,4 +27,8 @@ export const createGoal = (goalData) => api.post('/goals', goalData);
 export const getGoals = () => api.get('/goals');
 export const getGoalAnalysis = (goalId) => api.get(`/goals/analysis${goalId ? `?id=${goalId}` : ''}`);
 
+// What-If Simulator endpoints
+export const runSimulation = (params) => api.post('/simulate', params);
+export const getSimulationAIExplanation = (params, sim_result) => api.post('/simulate/ai-explanation', { params, sim_result });
+
 export default api;

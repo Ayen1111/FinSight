@@ -12,6 +12,8 @@ import {
   Bot, Send, User, Loader2
 } from 'lucide-react';
 
+import WhatIfSimulator from './WhatIfSimulator';
+
 export default function InsightsTab() {
   const [section, setSection] = useState('anomalies');
 
@@ -26,6 +28,7 @@ export default function InsightsTab() {
           { id: 'forecast', label: 'Forecast', icon: TrendingUp },
           { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
           { id: 'savings', label: 'Savings Goal', icon: Target },
+          { id: 'simulator', label: 'What-If Simulator', icon: Sparkles },
           { id: 'personality', label: 'Financial Personality', icon: Sparkles },
         ].map((s) => {
           const Icon = s.icon;
@@ -50,6 +53,7 @@ export default function InsightsTab() {
         {section === 'forecast' && <ForecastSection />}
         {section === 'subscriptions' && <SubscriptionsSection />}
         {section === 'savings' && <SavingsSection />}
+        {section === 'simulator' && <WhatIfSimulator />}
         {section === 'personality' && <PersonalitySection />}
       </div>
     </div>

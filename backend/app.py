@@ -203,6 +203,43 @@ def api_advice():
         return jsonify({'error': f'Error generating advice: {str(e)}'}), 500
 
 
+@app.route('/api/simulate', methods=['POST'])
+def api_simulate():
+    """Run What-If Simulation"""
+    if store['df'] is None or store.get('overview') is None:
+        return jsonify({'error': 'No data loaded. Please upload a file first.'}), 400
+        
+    data = request.get_json() or {}
+    try:
+        from simulator import run_simulation
+        res = run_simulation(store['df'], store, data)
+        if 'error' in res:
+            return jsonify(res), 400
+        return jsonify(res)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Simulation error: {str(e)}'}), 500
+
+@app.route('/api/simulate/ai-explanation', methods=['POST'])
+def api_simulate_ai():
+    """Get AI explanation for simulation results"""
+    if store['df'] is None:
+        return jsonify({'error': 'No data loaded.'}), 400
+        
+    data = request.get_json() or {}
+    params = data.get('params', {})
+    sim_result = data.get('sim_result', {})
+    
+    try:
+        from simulator import get_simulator_ai_explanation
+        explanation = get_simulator_ai_explanation(params, sim_result)
+        return jsonify({'explanation': explanation})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'AI Error: {str(e)}'}), 500
+
 @app.route('/api/goals', methods=['GET', 'POST'])
 def api_goals():
     """Get all goals or create a new goal."""
