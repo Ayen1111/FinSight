@@ -28,22 +28,32 @@ def load_and_clean(file_path_or_buffer, filename="data.csv"):
     # Standardize column names
     df.columns = df.columns.str.strip()
 
-    # Map possible column name variations
+    # Map possible column name variations but avoid duplicates
+    target_cols_found = set()
     col_map = {}
     for col in df.columns:
         cl = col.lower().replace('_', ' ').strip()
+        
+        target = None
         if 'date' in cl:
-            col_map[col] = 'Date'
+            target = 'Date'
         elif 'desc' in cl or 'transaction' in cl:
-            col_map[col] = 'Description'
+            target = 'Description'
         elif 'categ' in cl:
-            col_map[col] = 'Category'
+            target = 'Category'
         elif 'amount' in cl or 'value' in cl:
-            col_map[col] = 'Amount'
+            target = 'Amount'
         elif 'type' in cl or 'kind' in cl:
-            col_map[col] = 'Type'
+            target = 'Type'
+            
+        if target and target not in target_cols_found:
+            col_map[col] = target
+            target_cols_found.add(target)
 
     df = df.rename(columns=col_map)
+    
+    # Drop any duplicate columns that might have existed in the original file
+    df = df.loc[:, ~df.columns.duplicated()]
 
     # Ensure required columns exist
     required = ['Date', 'Amount']
