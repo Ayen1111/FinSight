@@ -30,8 +30,9 @@ store = {
     'forecast': None,
     'subscriptions': None,
     'health_score': None,
+    'personality': None,
+    'goals': []
 }
-
 SAMPLE_DATA_PATH = os.path.join(
     os.path.dirname(__file__), 'sample_data', 'Personal_Finance_Dataset.csv.xlsx'
 )
@@ -200,6 +201,63 @@ def api_advice():
     except Exception as e:
         traceback.print_exc()
         return jsonify({'error': f'Error generating advice: {str(e)}'}), 500
+
+
+@app.route('/api/goals', methods=['GET', 'POST'])
+def api_goals():
+    """Get all goals or create a new goal."""
+    if request.method == 'GET':
+        return jsonify({'goals': store['goals']})
+        
+    elif request.method == 'POST':
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Request body required'}), 400
+            
+        goal_id = str(len(store['goals']) + 1)
+        new_goal = {
+            'id': goal_id,
+            'name': data.get('name', 'My Goal'),
+            'target_amount': float(data.get('target_amount', 0)),
+            'timeline_months': int(data.get('timeline_months', 12)),
+            'priority': data.get('priority', 'Medium'),
+            'current_savings': float(data.get('current_savings', 0))
+        }
+        
+        store['goals'].append(new_goal)
+        return jsonify({'success': True, 'goal': new_goal})
+
+@app.route('/api/goals/analysis', methods=['GET'])
+def api_goals_analysis():
+    """Analyze goals against current financial data."""
+    if store['df'] is None:
+        return jsonify({'error': 'No data loaded. Please upload a file first.'}), 400
+        
+    goal_id = request.args.get('id')
+    if not goal_id:
+        # If no specific goal is requested, we could return analysis for all.
+        # For MVP, we require goal_id or just return the first goal's analysis if no ID.
+        if not store['goals']:
+            return jsonify({'error': 'No goals found'}), 404
+        goal = store['goals'][0]
+    else:
+        goal = next((g for g in store['goals'] if g['id'] == str(goal_id)), None)
+        if not goal:
+            return jsonify({'error': 'Goal not found'}), 404
+            
+    try:
+        from savings_planner import analyze_goal_achievability
+        analysis = analyze_goal_achievability(
+            store['df'], 
+            goal, 
+            store['health_score'],
+            store['personality']
+        )
+        return jsonify(analysis)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Error analyzing goal: {str(e)}'}), 500
 
 
 @app.route('/api/savings-goal', methods=['POST'])

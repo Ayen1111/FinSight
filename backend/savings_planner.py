@@ -145,3 +145,100 @@ def create_savings_plan(df, target_amount, months):
         'plan': plan,
         'tips': tips,
     }
+
+
+def analyze_goal_achievability(df, goal, health_score, personality):
+    """
+    Analyze a specific goal to determine achievability, gap, and recommendations.
+    """
+    target = goal['target_amount']
+    current_savings = goal.get('current_savings', 0)
+    months = goal['timeline_months']
+    
+    remaining_amount = max(0, target - current_savings)
+    required_monthly = remaining_amount / months if months > 0 else 0
+    
+    expenses = df[df['Type'] == 'Expense'].copy()
+    income = df[df['Type'] == 'Income'].copy()
+
+    monthly_expenses = expenses.groupby(expenses['Date'].dt.to_period('M'))['Amount'].sum().mean()
+    monthly_income = income.groupby(income['Date'].dt.to_period('M'))['Amount'].sum().mean()
+    if pd.isna(monthly_income): monthly_income = 0
+    if pd.isna(monthly_expenses): monthly_expenses = 0
+    
+    current_surplus = max(0, float(monthly_income) - float(monthly_expenses))
+    gap = max(0, required_monthly - current_surplus)
+    
+    # Analyze achievability
+    if required_monthly <= current_surplus:
+        achievability = "Easy"
+        success_probability = 95
+    elif gap <= float(monthly_expenses) * 0.1: # Need to cut < 10% of expenses
+        achievability = "Moderate"
+        success_probability = 75
+    elif gap <= float(monthly_expenses) * 0.25: # Need to cut < 25% of expenses
+        achievability = "Difficult"
+        success_probability = 40
+    else:
+        achievability = "Unrealistic"
+        success_probability = 10
+
+    # Personality impact
+    pers_msg = ""
+    if personality:
+        ptype = personality.get('type', '')
+        if 'Disciplined' in ptype:
+            success_probability = min(100, success_probability + 10)
+            pers_msg = "Leveraging your disciplined saving habits makes this goal very achievable."
+        elif 'Impulse' in ptype:
+            success_probability = max(5, success_probability - 15)
+            pers_msg = "Focus on reducing discretionary and impulse purchases to reach this target."
+        elif 'Lifestyle' in ptype:
+            success_probability = max(5, success_probability - 10)
+            pers_msg = "Consider scaling back on travel and entertainment to hit this goal faster."
+
+    # Health impact
+    health_msg = ""
+    if health_score:
+        score = health_score.get('score', 0)
+        if score >= 80:
+            health_msg = "Your excellent financial health positions you perfectly for this goal."
+        elif score < 50:
+            achievability = "Difficult" if achievability in ["Easy", "Moderate"] else achievability
+            success_probability = max(5, success_probability - 20)
+            health_msg = "Focus on improving your baseline financial health first (e.g. paying down debts)."
+
+    # Get specific recommendations by calling the base logic
+    base_plan = create_savings_plan(df, remaining_amount, months)
+    
+    # Filter recommendations to just cover the gap
+    recommendations = []
+    accumulated_savings = 0
+    for rec in base_plan.get('plan', []):
+        if accumulated_savings >= gap and gap > 0:
+            break
+        # Format the recommendation text based on the raw plan output
+        rec_text = f"Reduce {rec['category'].title()} spending by ₹{rec['monthly_savings']:,.0f}"
+        recommendations.append({
+            'action': rec_text,
+            'amount': rec['monthly_savings'],
+            'category': rec['category'],
+            'priority': rec['priority']
+        })
+        accumulated_savings += rec['monthly_savings']
+        
+    return {
+        "goal_name": goal['name'],
+        "target_amount": target,
+        "current_savings": current_savings,
+        "remaining_amount": remaining_amount,
+        "required_monthly_savings": round(required_monthly, 2),
+        "current_monthly_savings": round(current_surplus, 2),
+        "gap": round(gap, 2),
+        "achievability": achievability,
+        "success_probability": success_probability,
+        "personality_insight": pers_msg,
+        "health_insight": health_msg,
+        "recommendations": recommendations,
+        "estimated_months_at_current": base_plan.get('estimated_months')
+    }

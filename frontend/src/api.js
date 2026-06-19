@@ -22,4 +22,9 @@ export const getSavingsGoal = (target, months) =>
   api.post('/savings-goal', { target, months });
 export const getRecentTransactions = () => api.get('/recent-transactions');
 
+// Goal-Based Savings Planner endpoints
+export const createGoal = (goalData) => api.post('/goals', goalData);
+export const getGoals = () => api.get('/goals');
+export const getGoalAnalysis = (goalId) => api.get(`/goals/analysis${goalId ? `?id=${goalId}` : ''}`);
+
 export default api;

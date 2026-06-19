@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import {
-  getAnomalies, getAdvice, getForecast,
-  getSubscriptions, getSavingsGoal, getPersonality, askCoach
+import { 
+  getAnomalies, getForecast, getAdvice, 
+  getSubscriptions, getSavingsGoal, getPersonality, askCoach,
+  createGoal, getGoals, getGoalAnalysis
 } from '../api';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import {
@@ -447,158 +448,177 @@ function SubscriptionsSection() {
   );
 }
 
-/* ── SAVINGS GOAL ── */
+/* ── SAVINGS GOALS PLANNER ── */
 function SavingsSection() {
-  const [target, setTarget] = useState('');
-  const [months, setMonths] = useState('');
-  const [plan, setPlan] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [goals, setGoals] = useState([]);
+  const [analysis, setAnalysis] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Form State
+  const [showForm, setShowForm] = useState(false);
+  const [newGoal, setNewGoal] = useState({
+    name: '', target_amount: '', timeline_months: '', priority: 'Medium', current_savings: ''
+  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!target || !months) return;
-
-    setLoading(true);
-    setError(null);
+  const fetchGoals = async () => {
     try {
-      const res = await getSavingsGoal(parseFloat(target), parseInt(months));
-      setPlan(res.data);
+      setLoading(true);
+      const res = await getGoals();
+      setGoals(res.data.goals || []);
+      
+      if (res.data.goals && res.data.goals.length > 0) {
+        // Load analysis for the first goal by default
+        const analysisRes = await getGoalAnalysis(res.data.goals[0].id);
+        setAnalysis(analysisRes.data);
+      } else {
+        setAnalysis(null);
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to generate plan');
+      setError("Failed to load goals");
     } finally {
       setLoading(false);
     }
   };
 
-  const difficultyColor = {
-    Easy: 'text-[var(--color-success)]',
-    Medium: 'text-[var(--color-warning)]',
-    Hard: 'text-[var(--color-danger)]',
+  useEffect(() => {
+    fetchGoals();
+  }, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      await createGoal({
+        ...newGoal,
+        target_amount: parseFloat(newGoal.target_amount),
+        timeline_months: parseInt(newGoal.timeline_months),
+        current_savings: parseFloat(newGoal.current_savings || 0)
+      });
+      setShowForm(false);
+      setNewGoal({ name: '', target_amount: '', timeline_months: '', priority: 'Medium', current_savings: '' });
+      await fetchGoals();
+    } catch (err) {
+      setError("Failed to create goal");
+      setLoading(false);
+    }
   };
+
+  if (loading && goals.length === 0) return <Spinner />;
 
   return (
     <div className="space-y-6">
-      {/* Input Form */}
-      <div className="glass-card p-6 glow-border">
-        <div className="flex items-center gap-2 mb-4">
-          <Target className="w-5 h-5 text-[var(--color-accent)]" />
-          <h3 className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
-            Set Your Savings Goal
-          </h3>
-        </div>
-        <form onSubmit={handleSubmit} className="flex items-end gap-4 flex-wrap">
-          <div className="flex-1 min-w-[180px]">
-            <label className="text-xs text-[var(--color-text-dim)] block mb-1">Target Amount (₹)</label>
-            <input
-              type="number"
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              placeholder="e.g. 50000"
-              className="w-full bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-            />
-          </div>
-          <div className="flex-1 min-w-[120px]">
-            <label className="text-xs text-[var(--color-text-dim)] block mb-1">Timeframe (months)</label>
-            <input
-              type="number"
-              value={months}
-              onChange={(e) => setMonths(e.target.value)}
-              placeholder="e.g. 4"
-              className="w-full bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading || !target || !months}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] text-white font-semibold hover:shadow-lg hover:shadow-[var(--color-primary)]/20 transition-all disabled:opacity-50"
-          >
-            {loading ? 'Analyzing...' : 'Create Plan'}
-          </button>
-        </form>
-
-        {error && (
-          <div className="mt-3 p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-[var(--color-danger-light)] text-sm">
-            {error}
-          </div>
-        )}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-white">Goal-Based Savings Planner</h2>
+        <button 
+          onClick={() => setShowForm(!showForm)}
+          className="px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm hover:opacity-90"
+        >
+          {showForm ? 'Cancel' : '+ New Goal'}
+        </button>
       </div>
 
-      {/* Plan Result */}
-      {plan && (
-        <div className="space-y-4 slide-up">
-          {/* Feasibility Banner */}
-          <div className={`glass-card p-4 flex items-center gap-3 ${
-            plan.feasible
-              ? 'border-[var(--color-success)]/30'
-              : 'border-[var(--color-warning)]/30'
-          }`}>
-            <span className="text-2xl">{plan.feasible ? '✅' : '⚠️'}</span>
+      {showForm && (
+        <div className="glass-card p-6 slide-up">
+          <h3 className="text-lg font-semibold text-white mb-4">Create a Savings Goal</h3>
+          <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="font-semibold">
-                {plan.feasible ? 'Goal is Achievable!' : 'Challenging Goal'}
-              </p>
-              <p className="text-sm text-[var(--color-text-muted)]">{plan.timeline_message}</p>
+              <label className="text-xs text-[var(--color-text-dim)] block mb-1">Goal Name</label>
+              <input required value={newGoal.name} onChange={e => setNewGoal({...newGoal, name: e.target.value})} placeholder="e.g. MacBook Pro" className="w-full bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg px-4 py-2 text-white" />
             </div>
+            <div>
+              <label className="text-xs text-[var(--color-text-dim)] block mb-1">Target Amount (₹)</label>
+              <input required type="number" value={newGoal.target_amount} onChange={e => setNewGoal({...newGoal, target_amount: e.target.value})} placeholder="e.g. 120000" className="w-full bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg px-4 py-2 text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-[var(--color-text-dim)] block mb-1">Timeline (Months)</label>
+              <input required type="number" value={newGoal.timeline_months} onChange={e => setNewGoal({...newGoal, timeline_months: e.target.value})} placeholder="e.g. 12" className="w-full bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg px-4 py-2 text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-[var(--color-text-dim)] block mb-1">Current Savings Already Available (₹)</label>
+              <input type="number" value={newGoal.current_savings} onChange={e => setNewGoal({...newGoal, current_savings: e.target.value})} placeholder="e.g. 20000" className="w-full bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg px-4 py-2 text-white" />
+            </div>
+            <div className="md:col-span-2">
+              <button type="submit" disabled={loading} className="px-6 py-2 rounded-lg bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] text-white w-full">Save Goal</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {goals.length === 0 && !showForm && (
+        <div className="glass-card p-10 text-center">
+          <Target className="w-12 h-12 text-[var(--color-text-dim)] mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-white mb-2">No active goals yet</h3>
+          <p className="text-[var(--color-text-muted)] text-sm">Create a goal to get personalized saving recommendations.</p>
+        </div>
+      )}
+
+      {analysis && !showForm && (
+        <div className="space-y-6 slide-up">
+          {/* Main Goal Card */}
+          <div className="glass-card p-6">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Target className="w-6 h-6 text-[var(--color-primary)]" />
+                  {analysis.goal_name}
+                </h3>
+                <p className="text-[var(--color-text-muted)]">Target: {formatCurrency(analysis.target_amount)} • Remaining: {formatCurrency(analysis.remaining_amount)}</p>
+              </div>
+              <div className="text-right">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  analysis.achievability === 'Easy' ? 'bg-[var(--color-success)]/20 text-[var(--color-success)]' :
+                  analysis.achievability === 'Moderate' ? 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]' :
+                  'bg-[var(--color-danger)]/20 text-[var(--color-danger)]'
+                }`}>
+                  Achievability: {analysis.achievability}
+                </span>
+                <p className="text-xs text-[var(--color-text-dim)] mt-2">{analysis.success_probability}% Success Probability</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-[var(--color-surface-alt)] p-4 rounded-xl">
+                <p className="text-xs text-[var(--color-text-dim)]">Required Monthly</p>
+                <p className="text-lg font-semibold text-white">{formatCurrency(analysis.required_monthly_savings)}</p>
+              </div>
+              <div className="bg-[var(--color-surface-alt)] p-4 rounded-xl">
+                <p className="text-xs text-[var(--color-text-dim)]">Your Current Surplus</p>
+                <p className="text-lg font-semibold text-white">{formatCurrency(analysis.current_monthly_savings)}</p>
+              </div>
+              <div className="bg-[var(--color-surface-alt)] p-4 rounded-xl border border-[var(--color-danger)]/30">
+                <p className="text-xs text-[var(--color-text-dim)]">Monthly Gap</p>
+                <p className="text-lg font-semibold text-[var(--color-danger-light)]">{formatCurrency(analysis.gap)}</p>
+              </div>
+            </div>
+
+            {/* AI Insights */}
+            {(analysis.health_insight || analysis.personality_insight) && (
+              <div className="bg-black/30 p-4 rounded-xl space-y-2 border border-white/5">
+                {analysis.health_insight && <p className="text-sm text-[var(--color-primary-light)]">🩺 <b>Health:</b> {analysis.health_insight}</p>}
+                {analysis.personality_insight && <p className="text-sm text-[var(--color-accent-light)]">🧠 <b>Personality:</b> {analysis.personality_insight}</p>}
+              </div>
+            )}
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <MiniStat label="Monthly Target" value={formatCurrency(plan.monthly_target)} />
-            <MiniStat label="Current Surplus" value={formatCurrency(plan.current_monthly_surplus)} />
-            <MiniStat label="Achievable Savings" value={formatCurrency(plan.total_achievable_savings)} />
-            <MiniStat label="Est. Months" value={plan.estimated_months || '∞'} />
-          </div>
-
-          {/* Cutting Plan */}
-          {plan.plan.length > 0 && (
-            <div className="glass-card p-5">
-              <h3 className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-4">
-                Category Reduction Plan
-              </h3>
+          {/* Recommendations Engine */}
+          {analysis.recommendations && analysis.recommendations.length > 0 && (
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Smart Savings Recommendations</h3>
+              <p className="text-sm text-[var(--color-text-muted)] mb-4">We found exactly where you can cut back to bridge your {formatCurrency(analysis.gap)} gap:</p>
               <div className="space-y-3">
-                {plan.plan.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface-alt)]">
-                    <div>
-                      <p className="font-medium text-sm">{item.category}</p>
-                      <p className="text-xs text-[var(--color-text-dim)]">
-                        Current: {formatCurrency(item.current_monthly)}/mo →
-                        New: {formatCurrency(item.new_budget)}/mo
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-[var(--color-success)]">
-                        −{formatCurrency(item.monthly_savings)}/mo
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-[var(--color-text-dim)]">
-                          ↓{item.reduction_pct}%
-                        </span>
-                        <span className={`text-xs font-medium ${difficultyColor[item.difficulty]}`}>
-                          {item.difficulty}
-                        </span>
+                {analysis.recommendations.map((rec, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3 rounded-lg bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[var(--color-success)]/10 flex items-center justify-center text-[var(--color-success)]">
+                        ↓
                       </div>
+                      <p className="text-sm font-medium text-white">{rec.action}</p>
                     </div>
+                    <p className="text-sm font-bold text-[var(--color-success)]">+{formatCurrency(rec.amount)}/mo</p>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Tips */}
-          {plan.tips.length > 0 && (
-            <div className="glass-card p-5">
-              <h3 className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-                💡 Tips
-              </h3>
-              <ul className="space-y-2">
-                {plan.tips.map((tip, i) => (
-                  <li key={i} className="text-sm text-[var(--color-text-muted)] flex items-start gap-2">
-                    <ArrowRight className="w-4 h-4 text-[var(--color-primary-light)] mt-0.5 shrink-0" />
-                    {tip}
-                  </li>
-                ))}
-              </ul>
             </div>
           )}
         </div>
